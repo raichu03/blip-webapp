@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLIP Image Processing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2.5rem;
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.25rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 3rem;
+            width: 100%;
+            max-width: 950px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2.5rem;
+            animation: fadeIn 0.8s ease-out;
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+            padding: 2rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            background-color: #fcfdff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 1.25rem;
+            text-align: center;
+            letter-spacing: -0.02em;
+        }
+
+        .input-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 1.05rem;
+        }
+
+        .input-group input[type="file"],
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 0.9rem 1.2rem;
+            border: 1px solid #cdd4df;
+            border-radius: 0.6rem;
+            font-size: 1.05rem;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            background-color: #ffffff;
+        }
+
+        .input-group input[type="file"]:focus,
+        .input-group input[type="text"]:focus {
+            outline: none;
+            border-color: #5c6bc0;
+            box-shadow: 0 0 0 4px rgba(92, 107, 192, 0.25);
+        }
+
+        button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.9rem 1.8rem;
+            border-radius: 0.8rem;
+            font-size: 1.15rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(145deg, #6a7ee7, #5364da);
+            color: white;
+            border: none;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(145deg, #5364da, #6a7ee7);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        button:disabled {
+            background: #d4dce7;
+            color: #9aa5b1;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result-section {
+            padding: 2rem; 
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem; 
+            background-color: #fcfdff; 
+            min-height: 180px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.03);
+        }
+
+        .result-section h3 {
+            font-size: 1.4rem; 
+            font-weight: 700;
+            color: #2c3e50; 
+            margin-bottom: 1rem; 
+        }
+
+        .result-text {
+            font-size: 1.15rem; 
+            color: #5a6b7d; 
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-weight: 500;
+            line-height: 1.6; 
+        }
+
+        .error-message {
+            color: #ef4444; 
+            margin-top: 1.25rem; 
+            font-weight: 600;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.4); 
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 22px; 
+            height: 22px; 
+            animation: spin 0.8s linear infinite;
+            margin-left: 0.6rem;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .image-preview-container {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 200px; 
+            border-radius: 0.6rem;
+            border: 1px solid #cdd4df;
+            display: none; 
+            margin: 0 auto; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-section">
+            <h2>Image Captioning</h2>
+            <form id="captionForm">
+                <div class="input-group">
+                    <label for="captionImage">Upload Image:</label>
+                    <input type="file" id="captionImage" name="image" accept="image/*" required>
+                </div>
+                <div class="image-preview-container">
+                    <img id="captionImagePreview" class="image-preview" src="#" alt="Image Preview">
+                </div>
+                <button type="submit" id="captionSubmitBtn">
+                    Generate Caption
+                    <span id="captionSpinner" class="loading-spinner hidden"></span>
+                </button>
+                <div id="captionError" class="error-message hidden"></div>
+            </form>
+            <div class="result-section">
+                <h3>Caption:</h3>
+                <p id="captionResult" class="result-text">Upload an image to get a caption.</p>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Visual Question Answering</h2>
+            <form id="vqaForm">
+                <div class="input-group">
+                    <label for="vqaImage">Upload Image:</label>
+                    <input type="file" id="vqaImage" name="image" accept="image/*" required>
+                </div>
+                <div class="image-preview-container">
+                    <img id="vqaImagePreview" class="image-preview" src="#" alt="Image Preview">
+                </div>
+                <div class="input-group">
+                    <label for="vqaQuestion">Your Question:</label>
+                    <input type="text" id="vqaQuestion" name="question" placeholder="e.g., What is in the image?" required>
+                </div>
+                <button type="submit" id="vqaSubmitBtn">
+                    Get Answer
+                    <span id="vqaSpinner" class="loading-spinner hidden"></span>
+                </button>
+                <div id="vqaError" class="error-message hidden"></div>
+            </form>
+            <div class="result-section">
+                <h3>Answer:</h3>
+                <p id="vqaResult" class="result-text">Upload an image and ask a question to get an answer.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleLoadingState(buttonId, spinnerId, isLoading, originalButtonText) {
+            const button = document.getElementById(buttonId);
+            const spinner = document.getElementById(spinnerId);
+            if (isLoading) {
+                button.disabled = true;
+                if (!button.dataset.originalText) {
+                    button.dataset.originalText = button.textContent.trim();
+                }
+                button.textContent = 'Processing...';
+                spinner.classList.remove('hidden');
+                button.appendChild(spinner); 
+            } else {
+                button.disabled = false;
+                button.textContent = button.dataset.originalText || originalButtonText;
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function displayMessage(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            if (isError) {
+                element.classList.remove('hidden');
+            } else {
+                element.classList.add('hidden');
+            }
+        }
+
+        function displayImagePreview(inputElement, previewElement) {
+            if (inputElement.files && inputElement.files[0]) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    previewElement.src = e.target.result;
+                    previewElement.style.display = 'block';
+                };
+
+                reader.readAsDataURL(inputElement.files[0]);
+            } else {
+                previewElement.src = '#';
+                previewElement.style.display = 'none'; 
+            }
+        }
+
+        const captionImageInput = document.getElementById('captionImage');
+        const captionImagePreview = document.getElementById('captionImagePreview');
+
+        captionImageInput.addEventListener('change', function() {
+            displayImagePreview(this, captionImagePreview);
+        });
+
+        document.getElementById('captionForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const imageInput = document.getElementById('captionImage');
+            const resultElement = document.getElementById('captionResult');
+            const errorElement = document.getElementById('captionError');
+            const submitBtnId = 'captionSubmitBtn';
+            const spinnerId = 'captionSpinner';
+
+            resultElement.textContent = 'Processing...';
+            displayMessage(errorElement.id, '', false); 
+            toggleLoadingState(submitBtnId, spinnerId, true, 'Generate Caption'); 
+
+            if (imageInput.files.length === 0) {
+                resultElement.textContent = 'Please select an image file.';
+                toggleLoadingState(submitBtnId, spinnerId, false, 'Generate Caption');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+
+            try {
+                const response = await fetch(`/caption`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to generate caption.');
+                }
+
+                const data = await response.json();
+                resultElement.textContent = data.caption;
+            } catch (error) {
+                console.error('Error during captioning:', error);
+                displayMessage(errorElement.id, `Error: ${error.message}`, true);
+                resultElement.textContent = 'Failed to generate caption.';
+            } finally {
+                toggleLoadingState(submitBtnId, spinnerId, false, 'Generate Caption'); // Hide loading spinner
+            }
+        });
+
+        const vqaImageInput = document.getElementById('vqaImage');
+        const vqaImagePreview = document.getElementById('vqaImagePreview');
+
+        vqaImageInput.addEventListener('change', function() {
+            displayImagePreview(this, vqaImagePreview);
+        });
+
+        document.getElementById('vqaForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const imageInput = document.getElementById('vqaImage');
+            const questionInput = document.getElementById('vqaQuestion');
+            const resultElement = document.getElementById('vqaResult');
+            const errorElement = document.getElementById('vqaError');
+            const submitBtnId = 'vqaSubmitBtn';
+            const spinnerId = 'vqaSpinner';
+
+            resultElement.textContent = 'Processing...';
+            displayMessage(errorElement.id, '', false); 
+            toggleLoadingState(submitBtnId, spinnerId, true, 'Get Answer'); 
+
+            if (imageInput.files.length === 0) {
+                resultElement.textContent = 'Please select an image file.';
+                toggleLoadingState(submitBtnId, spinnerId, false, 'Get Answer');
+                return;
+            }
+            if (questionInput.value.trim() === '') {
+                resultElement.textContent = 'Please enter a question.';
+                toggleLoadingState(submitBtnId, spinnerId, false, 'Get Answer');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+            formData.append('question', questionInput.value);
+
+            try {
+                const response = await fetch(`/vqa`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to get answer.');
+                }
+
+                const data = await response.json();
+                resultElement.textContent = data.answer;
+            } catch (error) {
+                console.error('Error during VQA:', error);
+                displayMessage(errorElement.id, `Error: ${error.message}`, true);
+                resultElement.textContent = 'Failed to get answer.';
+            } finally {
+                toggleLoadingState(submitBtnId, spinnerId, false, 'Get Answer'); // Hide loading spinner
+            }
+        });
+    </script>
+</body>
+</html>
